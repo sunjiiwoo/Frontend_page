@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Scientific Calculator</title>
+  <style>
+    :root {
+      --bg: #11141f;
+      --panel: #1f2435;
+      --button: #2d3452;
+      --button-hover: #3f4a6c;
+      --accent: #ffb86c;
+      --text: #f8f8f2;
+      --secondary: #8f98bb;
+      --operator: #5f7cfa;
+      --function: #6f85b8;
+      --danger: #ff5c8a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #22263b 0%, #11141f 100%);
+      color: var(--text);
+    }
+    .calculator {
+      width: min(620px, 98vw);
+      background: var(--panel);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+    }
+    .screen {
+      background: #171b28;
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 18px;
+      min-height: 150px;
+      display: grid;
+      gap: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+    .history {
+      font-size: 0.95rem;
+      color: var(--secondary);
+      min-height: 30px;
+      word-break: break-word;
+      opacity: 0.85;
+    }
+    .output {
+      font-size: clamp(1.8rem, 3vw, 3.2rem);
+      text-align: right;
+      word-break: break-word;
+      min-height: 52px;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+    button {
+      border: none;
+      border-radius: 18px;
+      padding: 18px 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      background: var(--button);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    }
+    button:hover {
+      transform: translateY(-1px);
+      background: var(--button-hover);
+    }
+    .span-two {
+      grid-column: span 2;
+    }
+    .operator {
+      background: var(--operator);
+    }
+    .function {
+      background: var(--function);
+    }
+    .danger {
+      background: var(--danger);
+    }
+    .equals {
+      background: var(--accent);
+      color: #1a1d24;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Advanced scientific calculator">
+    <div class="screen">
+      <div class="history" id="history">0</div>
+      <div class="output" id="output">0</div>
+    </div>
+    <div class="buttons">
+      <button type="button" class="function" data-action="memClear">MC</button>
+      <button type="button" class="function" data-action="memRecall">MR</button>
+      <button type="button" class="function" data-action="memAdd">M+</button>
+      <button type="button" class="function" data-action="memSub">M-</button>
+      <button type="button" class="function" data-action="clear">C</button>
+      <button type="button" class="function" data-action="backspace">⌫</button>
+      <button type="button" class="function" data-value="sin(">sin</button>
+      <button type="button" class="function" data-value="cos(">cos</button>
+      <button type="button" class="function" data-value="tan(">tan</button>
+      <button type="button" class="function" data-action="ln">ln</button>
+      <button type="button" class="function" data-action="log">log</button>
+      <button type="button" class="function" data-action="sqrt">√</button>
+      <button type="button" data-value="7">7</button>
+      <button type="button" data-value="8">8</button>
+      <button type="button" data-value="9">9</button>
+      <button type="button" class="operator" data-value="(">(</button>
+      <button type="button" class="operator" data-value=")">)</button>
+      <button type="button" class="operator" data-value="^">^</button>
+      <button type="button" data-value="4">4</button>
+      <button type="button" data-value="5">5</button>
+      <button type="button" data-value="6">6</button>
+      <button type="button" class="operator" data-value="*">×</button>
+      <button type="button" class="operator" data-value="/">÷</button>
+      <button type="button" class="function" data-action="percent">%</button>
+      <button type="button" data-value="1">1</button>
+      <button type="button" data-value="2">2</button>
+      <button type="button" data-value="3">3</button>
+      <button type="button" class="operator" data-value="+">+</button>
+      <button type="button" class="operator" data-value="-">−</button>
+      <button type="button" class="function" data-action="factorial">x!</button>
+      <button type="button" class="span-two" data-value="0">0</button>
+      <button type="button" data-value=".">.</button>
+      <button type="button" class="function" data-action="ans">ANS</button>
+      <button type="button" class="function" data-value="π">π</button>
+      <button type="button" class="function" data-value="e">e</button>
+      <button type="button" class="equals" data-action="equals">=</button>
+    </div>
+  </div>
+  <script>
+    const historyEl = document.getElementById('history');
+    const outputEl = document.getElementById('output');
+    const buttons = document.querySelectorAll('button');
+    let expression = '';
+    let memory = 0;
+    let ans = 0;
+    function updateScreen() {
+      historyEl.textContent = expression || '0';
+      outputEl.textContent = expression ? expression : '0';
+    }
+    function appendValue(value) {
+      if (!value) return;
+      if (expression === '0' && !/[\.\(\+\-\*\/\^]/.test(value)) {
+        expression = value;
+      } else {
+        expression += value;
+      }
+      updateScreen();
+    }
+    function factorial(n) {
+      if (!Number.isFinite(n) || n < 0 || Math.floor(n) !== n) return NaN;
+      let result = 1;
+      for (let i = 2; i <= n; i += 1) result *= i;
+      return result;
+    }
+    function safeEval(expr) {
+      try {
+        const cleaned = expr
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/')
+          .replace(/\^/g, '**')
+          .replace(/π/g, 'Math.PI')
+          .replace(/\bANS\b/g, String(ans))
+          .replace(/\be\b/g, 'Math.E')
+          .replace(/\bln\(/g, 'Math.log(')
+          .replace(/\blog\(/g, 'Math.log10(')
+          .replace(/\bsin\(/g, 'Math.sin(')
+          .replace(/\bcos\(/g, 'Math.cos(')
+          .replace(/\btan\(/g, 'Math.tan(')
+          .replace(/\babs\(/g, 'Math.abs(')
+          .replace(/\bsqrt\(/g, 'Math.sqrt(')
+          .replace(/\bexp\(/g, 'Math.exp(');
+        const result = Function('Math', 'factorial', 'return ' + cleaned)(Math, factorial);
+        return Number.isFinite(result) ? result : 'Error';
+      } catch {
+        return 'Error';
+      }
+    }
+    function handleAction(action) {
+      switch (action) {
+        case 'clear':
+          expression = '';
+          break;
+        case 'backspace':
+          expression = expression.slice(0, -1);
+          break;
+        case 'percent':
+          if (!expression) return;
+          expression = String(safeEval(`(${expression}) / 100`));
+          break;
+        case 'sqrt':
+          if (!expression) return;
+          expression = String(Math.sqrt(safeEval(expression)));
+          break;
+        case 'ln':
+          if (!expression) return;
+          expression = String(Math.log(safeEval(expression)));
+          break;
+        case 'log':
+          if (!expression) return;
+          expression = String(Math.log10(safeEval(expression)));
+          break;
+        case 'factorial':
+          if (!expression) return;
+          expression = String(factorial(safeEval(expression)));
+          break;
+        case 'ans':
+          appendValue('ANS');
+          return;
+        case 'memClear':
+          memory = 0;
+          break;
+        case 'memRecall':
+          appendValue(String(memory));
+          return;
+        case 'memAdd':
+          memory += safeEval(expression || '0');
+          break;
+        case 'memSub':
+          memory -= safeEval(expression || '0');
+          break;
+        case 'equals':
+          if (!expression) return;
+          const result = safeEval(expression);
+          if (result !== 'Error') ans = result;
+          expression = result === 'Error' ? '' : String(result);
+          break;
+      }
+      updateScreen();
+    }
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        const value = button.dataset.value;
+        if (action) {
+          handleAction(action);
+        } else if (value) {
+          appendValue(value);
+        }
+      });
+    });
+    window.addEventListener('keydown', event => {
+      const key = event.key;
+      if (/^[0-9]$/.test(key)) {
+        appendValue(key);
+      } else if (key === '.') {
+        appendValue('.');
+      } else if (['+', '-', '*', '/'].includes(key)) {
+        appendValue(key);
+      } else if (key === '^') {
+        appendValue('^');
+      } else if (key === '(' || key === ')') {
+        appendValue(key);
+      } else if (key === 'Enter' || key === '=') {
+        event.preventDefault();
+        handleAction('equals');
+      } else if (key === 'Backspace') {
+        handleAction('backspace');
+      } else if (key === 'Escape') {
+        handleAction('clear');
+      }
+    });
+    updateScreen();
+  </script>
+</body>
+</html>
