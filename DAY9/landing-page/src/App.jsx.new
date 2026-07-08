@@ -1,0 +1,222 @@
+import { useMemo, useState } from "react";
+import "./App.css";
+
+function App() {
+  const products = [
+    {
+      id: 1,
+      name: "Gaming Laptop",
+      price: "₹75,999",
+      image:
+        "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500",
+      description: "Intel Core i7 • 16GB RAM • 512GB SSD",
+    },
+    {
+      id: 2,
+      name: "Smartphone",
+      price: "₹29,999",
+      image:
+        "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500",
+      description: "6.7-inch Display • 128GB Storage • 5G",
+    },
+    {
+      id: 3,
+      name: "Wireless Headphones",
+      price: "₹3,499",
+      image:
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+      description: "Bluetooth 5.3 • Noise Cancellation",
+    },
+    {
+      id: 4,
+      name: "Smart Watch",
+      price: "₹4,999",
+      image:
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+      description: "AMOLED Display • Heart Rate Monitor",
+    },
+  ];
+
+  const features = [
+    {
+      title: "Curated Excellence",
+      description: "Every product is handpicked for performance, design, and premium quality.",
+    },
+    {
+      title: "Fast Delivery",
+      description: "Enjoy lightning-fast dispatch and doorstep delivery with full support.",
+    },
+    {
+      title: "Trusted Experience",
+      description: "Secure payments, easy returns, and expert help whenever you need it.",
+    },
+  ];
+
+  const testimonials = [
+    {
+      quote: "The experience felt premium from start to finish. The product details were incredibly clear.",
+      author: "Aarav P.",
+    },
+    {
+      quote: "Beautiful layout, polished checkout, and the delivery was faster than I expected.",
+      author: "Nisha K.",
+    },
+  ];
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return products;
+
+    return products.filter((product) =>
+      [product.name, product.description, product.price]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [searchQuery]);
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="hero">
+          <div className="hero-copy">
+            <div className="badge-row">
+              <span className="eyebrow">⚡ Next-gen shopping</span>
+              <span className="eyebrow alt">Free express delivery</span>
+            </div>
+            <h1>Elevated essentials for modern living.</h1>
+            <p>
+              Discover premium gadgets, thoughtful tech, and concierge-level support in one immersive storefront.
+            </p>
+
+            <div className="hero-actions">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search premium gadgets..."
+              />
+              <button className="primary-btn">Shop now</button>
+            </div>
+
+            <div className="hero-stats">
+              <div>
+                <strong>200k+</strong>
+                <span>Happy customers</span>
+              </div>
+              <div>
+                <strong>4.9/5</strong>
+                <span>Average rating</span>
+              </div>
+              <div>
+                <strong>24/7</strong>
+                <span>Dedicated support</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="hero-preview">
+            <div className="preview-card">
+              <div className="preview-top">
+                <span>Featured drop</span>
+                <span>Limited</span>
+              </div>
+              <h3>UltraBook Pro</h3>
+              <p>AI performance • 1TB SSD • OLED display</p>
+              <div className="preview-visual">
+                <div className="preview-chip" />
+                <div className="dot" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="feature-strip">
+          <div>
+            <strong>48 hrs</strong>
+            <span>Dispatch time</span>
+          </div>
+          <div>
+            <strong>100%</strong>
+            <span>Secure checkout</span>
+          </div>
+          <div>
+            <strong>₹999+</strong>
+            <span>Free shipping threshold</span>
+          </div>
+        </div>
+      </header>
+
+      <section className="feature-section">
+        <div className="section-title">
+          <span className="section-label">Why it stands out</span>
+          <h2>Built for speed, comfort, and confidence.</h2>
+        </div>
+
+        <div className="feature-grid">
+          {features.map((feature) => (
+            <div className="feature-card" key={feature.title}>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="catalog-section">
+        <div className="section-top">
+          <div>
+            <p className="section-label">Curated catalog</p>
+            <h2>Trending picks</h2>
+          </div>
+          <span className="pill">
+            {searchQuery ? `Matches “${searchQuery}”` : "All products"}
+          </span>
+        </div>
+
+        <div className="product-grid">
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <div className="card" key={product.id}>
+                <img src={product.image} alt={product.name} />
+
+                <div className="card-body">
+                  <h2>{product.name}</h2>
+                  <p>{product.description}</p>
+                  <h3>{product.price}</h3>
+                  <button>Buy Now</button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <h3>No matching products found</h3>
+              <p>Try a different keyword like laptop, phone, or audio.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="testimonial-section">
+        <div className="section-title">
+          <span className="section-label">Loved by buyers</span>
+          <h2>What our customers are saying.</h2>
+        </div>
+
+        <div className="testimonial-grid">
+          {testimonials.map((item) => (
+            <div className="testimonial-card" key={item.author}>
+              <p>“{item.quote}”</p>
+              <strong>{item.author}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default App;
