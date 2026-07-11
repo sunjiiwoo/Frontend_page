@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — WorkForce Pro</title>
+  <meta name="description" content="Admin dashboard for WorkForce Pro employee management system." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="page-bg"></div>
+<div class="app-layout">
+
+  <!-- ─── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏢</div>
+      <div>
+        <h1>WorkForce<br><span style="color:var(--blue-light)">Pro</span></h1>
+        <span>Admin Panel</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Main Menu</div>
+      <div class="nav-item active" data-section="dashboard" onclick="UI.showSection('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-section="employees" onclick="UI.showSection('employees')">
+        <span class="nav-icon">👥</span> Employees
+      </div>
+      <div class="nav-item" data-section="attendance" onclick="UI.showSection('attendance')">
+        <span class="nav-icon">📅</span> Attendance
+      </div>
+      <div class="nav-item" data-section="salary" onclick="UI.showSection('salary')">
+        <span class="nav-icon">💰</span> Payroll
+      </div>
+
+      <div class="nav-section-title">Workflow</div>
+      <div class="nav-item" data-section="leaves" onclick="UI.showSection('leaves')">
+        <span class="nav-icon">🌴</span> Leave Management
+        <span class="nav-badge" id="leave-badge">0</span>
+      </div>
+      <div class="nav-item" data-section="tasks" onclick="UI.showSection('tasks')">
+        <span class="nav-icon">✅</span> Task Manager
+      </div>
+      <div class="nav-item" data-section="announcements" onclick="UI.showSection('announcements')">
+        <span class="nav-icon">📢</span> Announcements
+      </div>
+      <div class="nav-item" data-section="reports" onclick="UI.showSection('reports')">
+        <span class="nav-icon">📋</span> Reports
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card" id="admin-user-card">
+        <div class="avatar avatar-md" id="sidebar-avatar" style="background:#4f8ef722;color:#4f8ef7;border:2px solid #4f8ef744;">👑</div>
+        <div class="user-card-info">
+          <div class="name" id="sidebar-name">Admin</div>
+          <div class="role">Super Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost w-full" style="margin-top:10px;font-size:0.8rem;" onclick="Auth.logout()">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─────────────────────────────────────── -->
+  <div class="main-content">
+    <header class="main-header" id="page-header">
+      <div class="header-title">
+        <h2>Dashboard</h2>
+        <p>Welcome back! Here's what's happening today.</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search employees..." id="global-search" />
+        </div>
+        <div class="relative">
+          <button class="icon-btn" id="notif-btn">🔔<span class="notif-dot" id="notif-dot"></span></button>
+          <div class="notif-panel" id="notif-panel">
+            <div class="notif-panel-header">
+              Notifications
+              <button onclick="markAllRead()" style="font-size:0.75rem;background:none;border:none;color:var(--blue-light);cursor:pointer;">Mark all read</button>
+            </div>
+            <div id="notif-list"></div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="UI.showSection('profile')">⚙️</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- ═══════════════════════════════════════════════════════
+           DASHBOARD SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section active" id="section-dashboard">
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="stat-emp">0</div>
+            <div class="stat-label">Total Employees</div>
+            <div class="stat-change up">↑ 2 this month</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-present">0</div>
+            <div class="stat-label">Present Today</div>
+            <div class="stat-change up" id="stat-pct">↑ 0%</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon">🌴</div>
+            <div class="stat-value" id="stat-leave">0</div>
+            <div class="stat-label">On Leave</div>
+            <div class="stat-change down" id="stat-leave-lbl">pending approvals</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="stat-payroll">0</div>
+            <div class="stat-label">Monthly Payroll</div>
+            <div class="stat-change up">₹ total gross</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-tasks">0</div>
+            <div class="stat-label">Pending Tasks</div>
+            <div class="stat-change down">across all employees</div>
+          </div>
+        </div>
+
+        <div class="grid-2 mb-24">
+          <!-- Attendance Bar Chart -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Weekly Attendance</h3>
+              <span class="badge badge-blue">This Week</span>
+            </div>
+            <div class="bar-chart" id="weekly-chart"></div>
+            <div style="display:flex;gap:16px;margin-top:12px;">
+              <span style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></span>Present</span>
+              <span style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--red);display:inline-block"></span>Absent</span>
+              <span style="font-size:0.75rem;color:var(--text-secondary);display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--amber);display:inline-block"></span>Leave</span>
+            </div>
+          </div>
+
+          <!-- Department Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Department Overview</h3>
+              <span class="badge badge-purple">Headcount</span>
+            </div>
+            <div id="dept-overview"></div>
+          </div>
+        </div>
+
+        <div class="grid-2 mb-24">
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Pending Leave Requests</h3>
+              <button class="btn btn-ghost btn-sm" onclick="UI.showSection('leaves')">View All</button>
+            </div>
+            <div id="recent-leaves"></div>
+          </div>
+
+          <!-- Announcements Preview -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Announcements</h3>
+              <button class="btn btn-ghost btn-sm" onclick="UI.showSection('announcements')">Manage</button>
+            </div>
+            <div id="ann-preview"></div>
+          </div>
+        </div>
+
+        <!-- Recent Employees -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Team Members</h3>
+            <button class="btn btn-primary btn-sm" onclick="UI.showSection('employees')">View All</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Department</th><th>Designation</th><th>Status</th><th>Today</th></tr></thead>
+              <tbody id="dash-emp-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           EMPLOYEES SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-employees">
+        <div class="section-intro">
+          <div>
+            <h3>Employee Directory</h3>
+            <p>Add, review, and manage employee records in one place.</p>
+          </div>
+          <div class="pill-row">
+            <div class="stat-pill"><span>Total</span><strong id="emp-count-pill">0</strong></div>
+            <div class="stat-pill"><span>Active</span><strong id="emp-active-pill">0</strong></div>
+          </div>
+        </div>
+        <div class="flex-between mb-24">
+          <div class="flex gap-12">
+            <div class="search-bar" style="width:280px">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Search employees..." id="emp-search" oninput="renderEmployeeTable()" />
+            </div>
+            <select class="form-control" style="width:180px" id="emp-dept-filter" onchange="renderEmployeeTable()">
+              <option value="">All Departments</option>
+              <option>Engineering</option><option>Design</option><option>Marketing</option>
+              <option>HR</option><option>Finance</option>
+            </select>
+          </div>
+          <div class="flex gap-12">
+            <button class="btn btn-ghost btn-sm" id="toggle-view-btn" onclick="toggleEmpView()">🃏 Card View</button>
+            <button class="btn btn-primary" onclick="openAddEmp()">+ Add Employee</button>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="card" id="emp-table-view">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Department</th><th>Designation</th><th>Salary</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="emp-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card View -->
+        <div class="emp-card-grid hidden" id="emp-card-view"></div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           ATTENDANCE SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-attendance">
+        <div class="flex-between mb-24">
+          <div class="flex gap-12">
+            <select class="form-control" style="width:200px" id="att-emp-filter" onchange="renderAttendanceSection()">
+              <option value="">All Employees</option>
+            </select>
+            <input type="month" class="form-control" id="att-month" onchange="renderAttendanceSection()" style="width:180px"/>
+          </div>
+          <div class="flex gap-12">
+            <button class="btn btn-success btn-sm" onclick="markBulkAttendance('present')">✅ Mark Present</button>
+            <button class="btn btn-danger btn-sm" onclick="markBulkAttendance('absent')">❌ Mark Absent</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;" id="att-stats-row"></div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3 id="att-cal-title">Attendance Calendar</h3>
+              <div class="flex gap-8">
+                <button class="btn btn-ghost btn-sm" onclick="prevAttMonth()">‹</button>
+                <button class="btn btn-ghost btn-sm" onclick="nextAttMonth()">›</button>
+              </div>
+            </div>
+            <div class="calendar-grid" id="att-calendar"></div>
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+              <span style="font-size:0.75rem;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(34,211,165,0.3);display:inline-block"></span>Present</span>
+              <span style="font-size:0.75rem;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,0.2);display:inline-block"></span>Absent</span>
+              <span style="font-size:0.75rem;display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:rgba(245,158,11,0.2);display:inline-block"></span>Leave</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Daily Attendance Log</h3><span id="att-date-lbl" class="badge badge-blue"></span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Employee</th><th>In Time</th><th>Out Time</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="att-daily-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SALARY SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-salary">
+        <div class="flex-between mb-24">
+          <div class="flex gap-12">
+            <select class="form-control" style="width:200px" id="sal-emp-filter" onchange="renderSalarySection()">
+              <option value="">All Employees</option>
+            </select>
+            <select class="form-control" style="width:180px" id="sal-month-filter" onchange="renderSalarySection()">
+              <option value="0">Current Month</option>
+              <option value="1">Last Month</option>
+              <option value="2">2 Months Ago</option>
+              <option value="3">3 Months Ago</option>
+            </select>
+          </div>
+          <button class="btn btn-success" onclick="processPayroll()">⚡ Process Payroll</button>
+        </div>
+
+        <!-- Payroll Summary Cards -->
+        <div class="stats-grid mb-24" id="salary-summary-cards"></div>
+
+        <!-- Salary Table -->
+        <div class="card">
+          <div class="card-header"><h3>Payroll Register</h3><span class="badge badge-blue" id="payroll-month-lbl"></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Department</th><th>Basic</th><th>HRA</th><th>TA</th><th>Gross</th><th>PF</th><th>Tax</th><th>Net Pay</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="salary-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           LEAVES SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-leaves">
+        <div class="flex-between mb-24">
+          <div class="flex gap-12">
+            <select class="form-control" style="width:160px" id="leave-status-filter" onchange="renderLeaveSection()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <span class="badge badge-amber" id="leave-pending-badge"></span>
+        </div>
+
+        <!-- Leave Stats -->
+        <div class="stats-grid mb-24" style="grid-template-columns:repeat(3,1fr)" id="leave-stats-row"></div>
+
+        <div class="card">
+          <div class="card-header"><h3>Leave Applications</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Applied</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="leave-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           TASKS SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-tasks">
+        <div class="flex-between mb-24">
+          <div class="flex gap-12">
+            <select class="form-control" style="width:160px" id="task-emp-filter" onchange="renderTaskSection()">
+              <option value="">All Employees</option>
+            </select>
+            <select class="form-control" style="width:160px" id="task-status-filter" onchange="renderTaskSection()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="openAddTask()">+ Assign Task</button>
+        </div>
+
+        <div class="stats-grid mb-24" style="grid-template-columns:repeat(4,1fr)" id="task-stats-row"></div>
+
+        <div class="card">
+          <div class="card-header"><h3>All Tasks</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Task</th><th>Assigned To</th><th>Project</th><th>Priority</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="task-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           ANNOUNCEMENTS SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-announcements">
+        <div class="flex-between mb-24">
+          <h3>Company Announcements</h3>
+          <button class="btn btn-primary" onclick="openAddAnn()">+ New Announcement</button>
+        </div>
+        <div id="ann-list"></div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           REPORTS SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-reports">
+        <div class="mb-28">
+          <h3 class="mb-16" style="font-size:1.1rem;">Available Reports</h3>
+          <div class="grid-3" id="report-cards"></div>
+        </div>
+        <div class="card" id="report-preview" style="display:none">
+          <div class="card-header">
+            <h3 id="report-title">Report Preview</h3>
+            <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Print</button>
+          </div>
+          <div id="report-content"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           PROFILE SECTION
+      ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-profile">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Admin Profile</h3></div>
+            <div style="text-align:center;padding:24px 0">
+              <div class="avatar avatar-xl" style="background:#4f8ef722;color:#4f8ef7;border:3px solid #4f8ef744;margin:0 auto 16px;font-size:2.5rem;">👑</div>
+              <h2 id="profile-name" style="font-size:1.4rem;margin-bottom:4px"></h2>
+              <p style="color:var(--text-secondary)">Super Administrator</p>
+            </div>
+            <div class="divider"></div>
+            <div class="salary-breakdown" style="gap:8px">
+              <div class="salary-row"><span>Email</span><span id="profile-email"></span></div>
+              <div class="salary-row"><span>Role</span><span class="badge badge-blue">Admin</span></div>
+              <div class="salary-row"><span>Access Level</span><span class="badge badge-purple">Full Access</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Change Password</h3></div>
+            <div class="login-form" style="gap:16px">
+              <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" class="form-control" id="curr-pass" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label>New Password</label>
+                <input type="password" class="form-control" id="new-pass" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" class="form-control" id="conf-pass" placeholder="••••••••" />
+              </div>
+              <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══════ MODALS ═══════ -->
+
+<!-- Add/Edit Employee Modal -->
+<div class="modal-overlay" id="emp-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2 id="emp-modal-title">Add Employee</h2>
+      <button class="modal-close" onclick="UI.closeModal('emp-modal')">×</button>
+    </div>
+    <form id="emp-form" onsubmit="saveEmployee(event)">
+      <div class="grid-2" style="gap:16px;margin-bottom:16px">
+        <div class="form-group"><label>Full Name *</label><input type="text" class="form-control" id="ef-name" required placeholder="John Doe" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Email *</label><input type="email" class="form-control" id="ef-email" required placeholder="john@company.com" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Employee ID</label><input type="text" class="form-control" id="ef-id" placeholder="Auto-generated" readonly style="opacity:0.6"/></div>
+        <div class="form-group"><label>Password *</label><input type="password" class="form-control" id="ef-pass" required placeholder="Initial password" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Department *</label>
+          <select class="form-control" id="ef-dept" required onchange="updateEmpPreview()">
+            <option value="">Select...</option>
+            <option>Engineering</option><option>Design</option><option>Marketing</option>
+            <option>HR</option><option>Finance</option><option>Operations</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Designation *</label><input type="text" class="form-control" id="ef-desig" required placeholder="e.g. Software Engineer" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Basic Salary (₹) *</label><input type="number" class="form-control" id="ef-salary" required placeholder="50000" min="10000" step="1000" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Join Date *</label><input type="date" class="form-control" id="ef-joined" required onchange="updateEmpPreview()" /></div>
+        <div class="form-group"><label>Phone</label><input type="tel" class="form-control" id="ef-phone" placeholder="+91-XXXXXXXXXX" oninput="updateEmpPreview()"/></div>
+        <div class="form-group"><label>Status</label>
+          <select class="form-control" id="ef-status" onchange="updateEmpPreview()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="preview-card" id="emp-preview-card">
+        <div class="preview-header"><span>Preview</span><span id="emp-preview-status">Ready to save</span></div>
+        <div class="preview-grid">
+          <div class="preview-item"><span>Name</span><strong id="emp-preview-name">—</strong></div>
+          <div class="preview-item"><span>Email</span><strong id="emp-preview-email">—</strong></div>
+          <div class="preview-item"><span>Department</span><strong id="emp-preview-dept">—</strong></div>
+          <div class="preview-item"><span>Salary</span><strong id="emp-preview-salary">—</strong></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end; margin-top:16px">
+        <button type="button" class="btn btn-ghost" onclick="UI.closeModal('emp-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="emp-save-btn">Save Employee</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="task-modal-title">Assign Task</h2>
+      <button class="modal-close" onclick="UI.closeModal('task-modal')">×</button>
+    </div>
+    <form id="task-form" onsubmit="saveTask(event)">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label>Task Title *</label><input type="text" class="form-control" id="tf-title" required placeholder="Task description..."/></div>
+        <div class="grid-2" style="gap:16px">
+          <div class="form-group"><label>Assign To *</label>
+            <select class="form-control" id="tf-emp" required><option value="">Select employee...</option></select>
+          </div>
+          <div class="form-group"><label>Project</label>
+            <input type="text" class="form-control" id="tf-project" placeholder="Project name" />
+          </div>
+          <div class="form-group"><label>Priority *</label>
+            <select class="form-control" id="tf-priority" required>
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Due Date *</label>
+            <input type="date" class="form-control" id="tf-due" required />
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" onclick="UI.closeModal('task-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Task</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Announcement Modal -->
+<div class="modal-overlay" id="ann-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>New Announcement</h2>
+      <button class="modal-close" onclick="UI.closeModal('ann-modal')">×</button>
+    </div>
+    <form id="ann-form" onsubmit="saveAnnouncement(event)">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group"><label>Title *</label><input type="text" class="form-control" id="annf-title" required placeholder="Announcement title..."/></div>
+        <div class="form-group"><label>Message *</label><textarea class="form-control" id="annf-body" required rows="4" placeholder="Write your announcement here..."></textarea></div>
+        <div class="form-group"><label>Priority</label>
+          <select class="form-control" id="annf-priority">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" onclick="UI.closeModal('ann-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Post Announcement</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Payslip Modal -->
+<div class="modal-overlay" id="payslip-modal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h2>Pay Slip</h2>
+      <button class="modal-close" onclick="UI.closeModal('payslip-modal')">×</button>
+    </div>
+    <div id="payslip-content"></div>
+    <div style="text-align:right;margin-top:20px">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+// ─── Init ───────────────────────────────────────────────────
+DB.seed();
+const session = Auth.requireAdmin();
+if (!session) {
+  window.location.href = 'index.html';
+}
+
+// Set admin info
+document.getElementById('sidebar-name').textContent = session.name;
+document.getElementById('profile-name').textContent = session.name;
+document.getElementById('profile-email').textContent = session.email;
+
+// State
+let attViewMonth = new Date();
+let empViewMode = 'table'; // 'table' | 'card'
+let editEmpId = null;
+let editTaskId = null;
+
+// ─── Notifications ──────────────────────────────────────────
+function renderNotifications() {
+  const notifs = DB.getNotifications();
+  const unread = notifs.filter(n => !n.read);
+  const dot = document.getElementById('notif-dot');
+  dot.style.display = unread.length ? 'block' : 'none';
+  document.getElementById('notif-list').innerHTML = notifs.map(n => `
+    <div class="notif-item" onclick="readNotif('${n.id}')">
+      <div class="notif-dot-icon" style="background:${n.read ? 'var(--text-muted)' : 'var(--blue)'}"></div>
+      <div>
+        <div class="notif-text" style="color:${n.read ? 'var(--text-secondary)' : 'var(--text-primary)'}">${n.text}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.85rem">No notifications</div>';
+}
+function readNotif(id) {
+  const notifs = DB.getNotifications();
+  const n = notifs.find(x => x.id === id);
+  if (n) { n.read = true; DB.saveNotifications(notifs); renderNotifications(); }
+}
+function markAllRead() {
+  const notifs = DB.getNotifications();
+  notifs.forEach(n => n.read = true);
+  DB.saveNotifications(notifs);
+  renderNotifications();
+}
+document.getElementById('notif-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('notif-panel').classList.toggle('open');
+});
+document.addEventListener('click', () => document.getElementById('notif-panel').classList.remove('open'));
+
+// ─── Dashboard ─────────────────────────────────────────────
+function renderDashboard() {
+  const emps = DB.getEmployees();
+  const att = DB.getAttendance();
+  const leaves = DB.getLeaves();
+  const tasks = DB.getTasks();
+  const today = DB.today();
+
+  // Counts
+  let present = 0;
+  emps.forEach(emp => { if (att[emp.id]?.[today]?.status === 'present') present++; });
+  const pendingLeaves = leaves.filter(l => l.status === 'pending').length;
+  const pendingTasks = tasks.filter(t => t.status !== 'completed').length;
+  const totalPayroll = emps.reduce((s, e) => s + e.salary, 0);
+
+  // Animate stats
+  UI.animateNumber(document.getElementById('stat-emp'), emps.length);
+  UI.animateNumber(document.getElementById('stat-present'), present);
+  document.getElementById('stat-pct').textContent = `${Math.round(present/emps.length*100)||0}% attendance rate`;
+  UI.animateNumber(document.getElementById('stat-leave'), pendingLeaves);
+  document.getElementById('stat-leave-lbl').textContent = pendingLeaves + ' pending approvals';
+  UI.animateNumber(document.getElementById('stat-payroll'), Math.round(totalPayroll/1000), '₹', 'K');
+  UI.animateNumber(document.getElementById('stat-tasks'), pendingTasks);
+
+  // Leave badge
+  document.getElementById('leave-badge').textContent = pendingLeaves;
+  document.getElementById('leave-badge').style.display = pendingLeaves ? 'flex' : 'none';
+
+  // Weekly chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+  const chartEl = document.getElementById('weekly-chart');
+  chartEl.innerHTML = days.map(d => {
+    const p = Math.floor(Math.random()*3)+5;
+    const a = Math.floor(Math.random()*2);
+    const lv = Math.floor(Math.random()*2);
+    return `<div class="bar-col">
+      <div style="flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;">
+        <div class="bar-fill" style="background:var(--green);height:${p*10}px;opacity:0.9"></div>
+        <div class="bar-fill" style="background:var(--amber);height:${lv*10}px;opacity:0.9"></div>
+        <div class="bar-fill" style="background:var(--red);height:${a*10}px;opacity:0.9"></div>
+      </div>
+      <div class="bar-label">${d}</div>
+    </div>`;
+  }).join('');
+
+  // Department overview
+  const depts = {};
+  emps.forEach(e => { depts[e.department] = (depts[e.department]||0)+1; });
+  const deptColors = { Engineering: '#4f8ef7', Design: '#ec4899', Marketing: '#f59e0b', HR: '#22d3a5', Finance: '#7c5cfc', Operations: '#0ea5e9' };
+  document.getElementById('dept-overview').innerHTML = Object.entries(depts).map(([d, c]) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:0.875rem;font-weight:500">${d}</span>
+        <span style="font-size:0.8rem;color:var(--text-secondary)">${c} employee${c>1?'s':''}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="background:${deptColors[d]||'var(--blue)'};width:${c/emps.length*100}%"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Pending leaves preview
+  const pending = leaves.filter(l => l.status === 'pending').slice(0, 4);
+  document.getElementById('recent-leaves').innerHTML = pending.length ? pending.map(l => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div style="display:flex;gap:10px;align-items:center">
+        ${UI.avatar(l.empName, '#4f8ef7', 'sm')}
+        <div>
+          <div style="font-size:0.85rem;font-weight:600">${l.empName}</div>
+          <div style="font-size:0.75rem;color:var(--text-secondary)">${l.type} · ${l.days} day(s)</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success btn-sm" onclick="approveLeave('${l.id}')">✓</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectLeave('${l.id}')">✗</button>
+      </div>
+    </div>
+  `).join('') : '<p style="text-align:center;color:var(--text-muted);padding:20px;font-size:0.85rem">No pending requests</p>';
+
+  // Announcements preview
+  const anns = DB.getAnnouncements().slice(0, 3);
+  document.getElementById('ann-preview').innerHTML = anns.map(a => `
+    <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div style="font-size:0.875rem;font-weight:600;margin-bottom:4px">${a.title}</div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:6px">${a.body.slice(0,80)}…</div>
+      <div style="font-size:0.72rem;color:var(--text-muted)">${UI.fmtDate(a.posted)} · ${a.postedBy} ${UI.priorityBadge(a.priority)}</div>
+    </div>
+  `).join('');
+
+  // Employee table
+  document.getElementById('dash-emp-table').innerHTML = emps.slice(0, 6).map(emp => {
+    const todayAtt = att[emp.id]?.[today];
+    return `<tr>
+      <td><div style="display:flex;gap:10px;align-items:center">${UI.avatar(emp.name, emp.color, 'sm')}<div><div style="font-weight:600;font-size:0.875rem">${emp.name}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${emp.id}</div></div></div></td>
+      <td>${emp.department}</td>
+      <td>${emp.designation}</td>
+      <td>${UI.statusBadge(emp.status)}</td>
+      <td>${todayAtt ? UI.statusBadge(todayAtt.status) : '<span class="badge badge-amber">Not Marked</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Employees ──────────────────────────────────────────────
+function updateEmpPreview() {
+  const name = document.getElementById('ef-name').value.trim() || 'Employee Name';
+  const email = document.getElementById('ef-email').value.trim() || 'email@example.com';
+  const dept = document.getElementById('ef-dept').value || 'Department';
+  const salary = document.getElementById('ef-salary').value ? DB.fmt(parseInt(document.getElementById('ef-salary').value, 10)) : '₹0';
+  document.getElementById('emp-preview-name').textContent = name;
+  document.getElementById('emp-preview-email').textContent = email;
+  document.getElementById('emp-preview-dept').textContent = dept;
+  document.getElementById('emp-preview-salary').textContent = salary;
+  document.getElementById('emp-preview-status').textContent = document.getElementById('ef-status').value === 'active' ? 'Active status' : 'Inactive status';
+}
+
+function renderEmployeeTable() {
+  const emps = DB.getEmployees();
+  const q = document.getElementById('emp-search').value.toLowerCase();
+  const dept = document.getElementById('emp-dept-filter').value;
+  const filtered = emps.filter(e =>
+    (!q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.id.toLowerCase().includes(q)) &&
+    (!dept || e.department === dept)
+  );
+
+  document.getElementById('emp-count-pill').textContent = emps.length;
+  document.getElementById('emp-active-pill').textContent = emps.filter(e => e.status === 'active').length;
+
+  document.getElementById('emp-table').innerHTML = filtered.map(emp => `
+    <tr>
+      <td><div style="display:flex;gap:10px;align-items:center">${UI.avatar(emp.name, emp.color, 'sm')}<div><div style="font-weight:600;font-size:0.875rem">${emp.name}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${emp.email}</div></div></div></td>
+      <td><span class="badge badge-blue">${emp.department}</span></td>
+      <td>${emp.designation}</td>
+      <td style="font-weight:600">${DB.fmt(emp.salary)}</td>
+      <td>${UI.fmtDate(emp.joined)}</td>
+      <td>${UI.statusBadge(emp.status)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editEmployee('${emp.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px">No employees found</td></tr>';
+
+  // Card view
+  document.getElementById('emp-card-view').innerHTML = filtered.map(emp => `
+    <div class="emp-card">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${emp.color}"></div>
+      ${UI.avatar(emp.name, emp.color, 'lg')}
+      <div class="emp-name">${emp.name}</div>
+      <div class="emp-role">${emp.designation}</div>
+      <span class="badge badge-blue">${emp.department}</span>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:8px">${emp.email}</div>
+      <div class="emp-card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editEmployee('${emp.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('') || '<p style="color:var(--text-muted);text-align:center;padding:32px;grid-column:1/-1">No employees found</p>';
+}
+
+function toggleEmpView() {
+  empViewMode = empViewMode === 'table' ? 'card' : 'table';
+  document.getElementById('emp-table-view').classList.toggle('hidden', empViewMode !== 'table');
+  document.getElementById('emp-card-view').classList.toggle('hidden', empViewMode !== 'card');
+  document.getElementById('toggle-view-btn').textContent = empViewMode === 'table' ? '🃏 Card View' : '📋 Table View';
+}
+
+function openAddEmp() {
+  editEmpId = null;
+  document.getElementById('emp-modal-title').textContent = 'Add Employee';
+  document.getElementById('emp-form').reset();
+  const newId = DB.generateId('E');
+  document.getElementById('ef-id').value = newId;
+  document.getElementById('ef-joined').value = DB.today();
+  document.getElementById('ef-status').value = 'active';
+  updateEmpPreview();
+  UI.openModal('emp-modal');
+}
+
+function editEmployee(id) {
+  editEmpId = id;
+  const emp = DB.getEmployee(id);
+  if (!emp) return;
+  document.getElementById('emp-modal-title').textContent = 'Edit Employee';
+  document.getElementById('ef-id').value = emp.id;
+  document.getElementById('ef-name').value = emp.name;
+  document.getElementById('ef-email').value = emp.email;
+  document.getElementById('ef-pass').value = emp.password;
+  document.getElementById('ef-dept').value = emp.department;
+  document.getElementById('ef-desig').value = emp.designation;
+  document.getElementById('ef-salary').value = emp.salary;
+  document.getElementById('ef-joined').value = emp.joined;
+  document.getElementById('ef-phone').value = emp.phone || '';
+  document.getElementById('ef-status').value = emp.status;
+  UI.openModal('emp-modal');
+}
+
+function saveEmployee(e) {
+  e.preventDefault();
+  const name = document.getElementById('ef-name').value.trim();
+  const email = document.getElementById('ef-email').value.trim();
+  const password = document.getElementById('ef-pass').value;
+  const department = document.getElementById('ef-dept').value;
+  const designation = document.getElementById('ef-desig').value.trim();
+  const salary = parseInt(document.getElementById('ef-salary').value, 10);
+  const joined = document.getElementById('ef-joined').value;
+
+  if (!name || !email || !password || !department || !designation || !salary || !joined) {
+    UI.toast('Please complete all required fields.', 'error');
+    return;
+  }
+  if (salary < 10000) {
+    UI.toast('Salary must be at least ₹10,000.', 'warning');
+    return;
+  }
+
+  const emps = DB.getEmployees();
+  const colors = ['#4f8ef7','#ec4899','#f59e0b','#22d3a5','#7c5cfc','#f43f5e','#0ea5e9','#a78bfa'];
+  const avatars = ['👨‍💻','👩‍🎨','📊','🤝','⚙️','💰','🛠️','🎨','📱','🔬'];
+  const data = {
+    id: document.getElementById('ef-id').value,
+    name,
+    email,
+    password,
+    department,
+    designation,
+    salary,
+    joined,
+    phone: document.getElementById('ef-phone').value,
+    status: document.getElementById('ef-status').value,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    avatar: avatars[Math.floor(Math.random()*avatars.length)],
+    role: 'Employee',
+  };
+  if (editEmpId) {
+    const idx = emps.findIndex(e => e.id === editEmpId);
+    if (idx >= 0) { data.color = emps[idx].color; data.avatar = emps[idx].avatar; emps[idx] = data; }
+  } else {
+    emps.push(data);
+  }
+  DB.saveEmployees(emps);
+  UI.closeModal('emp-modal');
+  UI.toast(editEmpId ? 'Employee updated!' : 'Employee added!', 'success');
+  renderEmployeeTable();
+  renderDashboard();
+}
+
+function deleteEmployee(id) {
+  const emp = DB.getEmployee(id);
+  UI.confirm(`Delete ${emp?.name}? This cannot be undone.`, () => {
+    const emps = DB.getEmployees().filter(e => e.id !== id);
+    DB.saveEmployees(emps);
+    renderEmployeeTable();
+    UI.toast('Employee deleted.', 'info');
+  });
+}
+
+// ─── Attendance ─────────────────────────────────────────────
+function populateEmpDropdown(selectId, allLabel = 'All Employees') {
+  const sel = document.getElementById(selectId);
+  const emps = DB.getEmployees();
+  sel.innerHTML = `<option value="">${allLabel}</option>` + emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+function renderAttendanceSection() {
+  const today = DB.today();
+  document.getElementById('att-date-lbl').textContent = UI.fmtDate(today);
+
+  const emps = DB.getEmployees();
+  const att = DB.getAttendance();
+  const selEmp = document.getElementById('att-emp-filter').value;
+
+  // Stats
+  let present = 0, absent = 0, leave = 0;
+  const targetEmps = selEmp ? emps.filter(e => e.id === selEmp) : emps;
+  targetEmps.forEach(emp => {
+    const s = att[emp.id]?.[today]?.status;
+    if (s === 'present') present++;
+    else if (s === 'absent') absent++;
+    else if (s === 'leave') leave++;
+  });
+  const unmarked = targetEmps.length - present - absent - leave;
+  document.getElementById('att-stats-row').innerHTML = [
+    { label: 'Present', val: present, cls: 'green', icon: '✅' },
+    { label: 'Absent', val: absent, cls: 'red', icon: '❌' },
+    { label: 'On Leave', val: leave, cls: 'amber', icon: '🌴' },
+    { label: 'Not Marked', val: unmarked, cls: 'blue', icon: '❓' },
+  ].map(s => `<div class="stat-card ${s.cls}"><div class="stat-icon">${s.icon}</div><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  // Calendar
+  renderAttCalendar(selEmp);
+
+  // Daily table
+  document.getElementById('att-daily-table').innerHTML = targetEmps.map(emp => {
+    const rec = att[emp.id]?.[today] || {};
+    return `<tr>
+      <td><div style="display:flex;gap:8px;align-items:center">${UI.avatar(emp.name, emp.color, 'sm')}<span style="font-size:0.875rem;font-weight:500">${emp.name}</span></div></td>
+      <td style="color:var(--green)">${rec.inTime || '—'}</td>
+      <td style="color:var(--text-secondary)">${rec.outTime || '—'}</td>
+      <td>${UI.statusBadge(rec.status || 'unmarked')}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-success btn-sm" onclick="markAtt('${emp.id}','present')">✅</button>
+          <button class="btn btn-danger btn-sm" onclick="markAtt('${emp.id}','absent')">❌</button>
+          <button class="btn btn-ghost btn-sm" onclick="markAtt('${emp.id}','leave')">🌴</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAttCalendar(empId) {
+  const att = DB.getAttendance();
+  const m = attViewMonth;
+  const year = m.getFullYear();
+  const month = m.getMonth();
+  document.getElementById('att-cal-title').textContent = m.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date().getDate();
+  const todayMonth = new Date().getMonth();
+  const todayYear = new Date().getFullYear();
+
+  const dayHeaders = ['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div class="cal-day-header">${d}</div>`).join('');
+  let cells = '';
+  for (let i = 0; i < firstDay; i++) cells += '<div class="cal-day other-month"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls = 'cal-day';
+    if (d === today && month === todayMonth && year === todayYear) cls += ' today';
+    if (empId && att[empId]?.[dateStr]) {
+      const s = att[empId][dateStr].status;
+      if (s === 'present') cls += ' present';
+      else if (s === 'absent') cls += ' absent';
+      else if (s === 'leave') cls += ' leave';
+    }
+    cells += `<div class="${cls}">${d}</div>`;
+  }
+  document.getElementById('att-calendar').innerHTML = dayHeaders + cells;
+}
+function prevAttMonth() { attViewMonth.setMonth(attViewMonth.getMonth()-1); renderAttCalendar(document.getElementById('att-emp-filter').value); }
+function nextAttMonth() { attViewMonth.setMonth(attViewMonth.getMonth()+1); renderAttCalendar(document.getElementById('att-emp-filter').value); }
+
+function markAtt(empId, status) {
+  const att = DB.getAttendance();
+  const today = DB.today();
+  if (!att[empId]) att[empId] = {};
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  att[empId][today] = { status, inTime: status === 'present' ? timeStr : null, outTime: null };
+  DB.saveAttendance(att);
+  renderAttendanceSection();
+  UI.toast(`Marked ${status}`, 'success');
+}
+
+function markBulkAttendance(status) {
+  const emps = DB.getEmployees();
+  const att = DB.getAttendance();
+  const today = DB.today();
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  emps.forEach(emp => {
+    if (!att[emp.id]) att[emp.id] = {};
+    att[emp.id][today] = { status, inTime: status === 'present' ? timeStr : null };
+  });
+  DB.saveAttendance(att);
+  renderAttendanceSection();
+  UI.toast(`All employees marked ${status}`, 'success');
+}
+
+// ─── Salary ─────────────────────────────────────────────────
+function renderSalarySection() {
+  const emps = DB.getEmployees();
+  const sal = DB.getSalary();
+  const monthIdx = parseInt(document.getElementById('sal-month-filter').value || '0');
+  const selEmp = document.getElementById('sal-emp-filter').value;
+  const filtered = selEmp ? emps.filter(e => e.id === selEmp) : emps;
+
+  // Month label
+  const d = new Date(); d.setMonth(d.getMonth() - monthIdx);
+  const monthLabel = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+  document.getElementById('payroll-month-lbl').textContent = monthLabel;
+
+  let totalGross = 0, totalNet = 0, totalPF = 0, paid = 0;
+  const rows = filtered.map(emp => {
+    const record = sal[emp.id]?.[monthIdx];
+    if (!record) return `<tr><td colspan="11" style="color:var(--text-muted);text-align:center">${emp.name} — No record</td></tr>`;
+    totalGross += record.gross;
+    totalNet += record.net;
+    totalPF += record.pf;
+    if (record.status === 'paid') paid++;
+    return `<tr>
+      <td><div style="display:flex;gap:8px;align-items:center">${UI.avatar(emp.name, emp.color, 'sm')}<div><div style="font-weight:600;font-size:0.875rem">${emp.name}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${emp.id}</div></div></div></td>
+      <td>${emp.department}</td>
+      <td>${DB.fmt(record.basic)}</td>
+      <td>${DB.fmt(record.hra)}</td>
+      <td>${DB.fmt(record.ta)}</td>
+      <td style="font-weight:600">${DB.fmt(record.gross)}</td>
+      <td style="color:var(--red)">${DB.fmt(record.pf)}</td>
+      <td style="color:var(--red)">${DB.fmt(record.tax)}</td>
+      <td style="font-weight:700;color:var(--green)">${DB.fmt(record.net)}</td>
+      <td>${UI.statusBadge(record.status)}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="viewPayslip('${emp.id}',${monthIdx})">📄</button>
+          ${record.status==='pending' ? `<button class="btn btn-success btn-sm" onclick="paySalary('${emp.id}',${monthIdx})">💸</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('salary-table').innerHTML = rows;
+
+  // Summary cards
+  document.getElementById('salary-summary-cards').innerHTML = [
+    { label:'Total Gross', val: DB.fmt(totalGross), cls:'blue', icon:'💰' },
+    { label:'Total Net Pay', val: DB.fmt(totalNet), cls:'green', icon:'✅' },
+    { label:'Total PF', val: DB.fmt(totalPF), cls:'amber', icon:'🏦' },
+    { label:'Paid This Month', val: paid+'/'+filtered.length, cls:'purple', icon:'📤' },
+  ].map(s => `<div class="stat-card ${s.cls}"><div class="stat-icon">${s.icon}</div><div class="stat-value" style="font-size:1.4rem">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+}
+
+function paySalary(empId, monthIdx) {
+  const sal = DB.getSalary();
+  if (sal[empId]?.[monthIdx]) {
+    sal[empId][monthIdx].status = 'paid';
+    sal[empId][monthIdx].paidOn = DB.today();
+  }
+  DB.saveSalary(sal);
+  renderSalarySection();
+  UI.toast('Salary paid successfully!', 'success');
+}
+
+function processPayroll() {
+  UI.confirm('Process payroll for all pending employees this month?', () => {
+    const emps = DB.getEmployees();
+    const sal = DB.getSalary();
+    emps.forEach(emp => {
+      if (sal[emp.id]?.[0]?.status === 'pending') {
+        sal[emp.id][0].status = 'paid';
+        sal[emp.id][0].paidOn = DB.today();
+      }
+    });
+    DB.saveSalary(sal);
+    renderSalarySection();
+    UI.toast('Payroll processed for all employees!', 'success');
+  });
+}
+
+function viewPayslip(empId, monthIdx) {
+  const emp = DB.getEmployee(empId);
+  const sal = DB.getSalary();
+  const record = sal[empId]?.[monthIdx];
+  if (!emp || !record) return;
+  document.getElementById('payslip-content').innerHTML = `
+    <div style="border:1px solid var(--glass-border);border-radius:12px;padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div><h3 style="font-size:1.1rem;margin-bottom:4px">WorkForce Pro</h3><p style="font-size:0.8rem;color:var(--text-secondary)">Pay Slip — ${record.month}</p></div>
+        <div style="text-align:right"><div style="font-size:0.8rem;color:var(--text-secondary)">Employee ID</div><div style="font-weight:700">${emp.id}</div></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:20px;padding:16px;background:rgba(79,142,247,0.06);border-radius:10px">
+        ${UI.avatar(emp.name, emp.color, 'lg')}
+        <div>
+          <div style="font-weight:700;font-size:1.1rem">${emp.name}</div>
+          <div style="color:var(--text-secondary);font-size:0.85rem">${emp.designation} · ${emp.department}</div>
+          <div style="color:var(--text-secondary);font-size:0.8rem">${emp.email}</div>
+        </div>
+      </div>
+      <div class="salary-breakdown">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Earnings</div>
+        <div class="salary-row"><span>Basic Salary</span><span class="earning">${DB.fmt(record.basic)}</span></div>
+        <div class="salary-row"><span>HRA (40%)</span><span class="earning">${DB.fmt(record.hra)}</span></div>
+        <div class="salary-row"><span>Travel Allowance</span><span class="earning">${DB.fmt(record.ta)}</span></div>
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.08em;margin:12px 0 8px">Deductions</div>
+        <div class="salary-row"><span>PF (12%)</span><span class="deduction">−${DB.fmt(record.pf)}</span></div>
+        <div class="salary-row"><span>Income Tax (8%)</span><span class="deduction">−${DB.fmt(record.tax)}</span></div>
+        <div class="divider"></div>
+        <div class="salary-row total"><span>Net Pay</span><span style="color:var(--green);font-size:1.2rem">${DB.fmt(record.net)}</span></div>
+      </div>
+      <div style="margin-top:16px;padding:12px;border-radius:8px;background:rgba(34,211,165,0.06);border:1px solid rgba(34,211,165,0.15);font-size:0.8rem;text-align:center;color:var(--text-secondary)">
+        Status: ${UI.statusBadge(record.status)} · Days Present: ${record.daysPresent}
+        ${record.paidOn ? ' · Paid on: '+UI.fmtDate(record.paidOn) : ''}
+      </div>
+    </div>
+  `;
+  UI.openModal('payslip-modal');
+}
+
+// ─── Leaves ─────────────────────────────────────────────────
+function renderLeaveSection() {
+  const leaves = DB.getLeaves();
+  const filter = document.getElementById('leave-status-filter').value;
+  const filtered = filter ? leaves.filter(l => l.status === filter) : leaves;
+  const pending = leaves.filter(l => l.status === 'pending').length;
+  document.getElementById('leave-pending-badge').textContent = pending + ' pending';
+  document.getElementById('leave-badge').textContent = pending;
+  document.getElementById('leave-badge').style.display = pending ? 'flex' : 'none';
+
+  // Stats
+  const approved = leaves.filter(l => l.status==='approved').length;
+  const rejected = leaves.filter(l => l.status==='rejected').length;
+  document.getElementById('leave-stats-row').innerHTML = [
+    { label:'Pending', val:pending, cls:'amber', icon:'⏳' },
+    { label:'Approved', val:approved, cls:'green', icon:'✅' },
+    { label:'Rejected', val:rejected, cls:'red', icon:'❌' },
+  ].map(s => `<div class="stat-card ${s.cls}"><div class="stat-icon">${s.icon}</div><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  document.getElementById('leave-table').innerHTML = filtered.map(l => `
+    <tr>
+      <td style="font-weight:600">${l.empName}</td>
+      <td><span class="badge badge-blue">${l.type}</span></td>
+      <td>${UI.fmtDate(l.from)}</td>
+      <td>${UI.fmtDate(l.to)}</td>
+      <td style="text-align:center">${l.days}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:0.82rem">${l.reason}</td>
+      <td style="font-size:0.8rem;color:var(--text-secondary)">${UI.fmtDate(l.applied)}</td>
+      <td>${UI.statusBadge(l.status)}</td>
+      <td>
+        ${l.status==='pending' ? `<div style="display:flex;gap:4px">
+          <button class="btn btn-success btn-sm" onclick="approveLeave('${l.id}')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectLeave('${l.id}')">Reject</button>
+        </div>` : '—'}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:32px">No leave records</td></tr>';
+}
+
+function approveLeave(id) {
+  const leaves = DB.getLeaves();
+  const l = leaves.find(x => x.id === id);
+  if (l) { l.status = 'approved'; DB.saveLeaves(leaves); renderLeaveSection(); UI.toast('Leave approved!', 'success'); renderDashboard(); }
+}
+function rejectLeave(id) {
+  const leaves = DB.getLeaves();
+  const l = leaves.find(x => x.id === id);
+  if (l) { l.status = 'rejected'; DB.saveLeaves(leaves); renderLeaveSection(); UI.toast('Leave rejected.', 'info'); renderDashboard(); }
+}
+
+// ─── Tasks ──────────────────────────────────────────────────
+function renderTaskSection() {
+  const tasks = DB.getTasks();
+  const empFilter = document.getElementById('task-emp-filter').value;
+  const statusFilter = document.getElementById('task-status-filter').value;
+  const filtered = tasks.filter(t =>
+    (!empFilter || t.assignedTo === empFilter) &&
+    (!statusFilter || t.status === statusFilter)
+  );
+
+  const pending = tasks.filter(t=>t.status==='pending').length;
+  const inProgress = tasks.filter(t=>t.status==='in-progress').length;
+  const completed = tasks.filter(t=>t.status==='completed').length;
+  document.getElementById('task-stats-row').innerHTML = [
+    { label:'Total', val:tasks.length, cls:'blue', icon:'📋' },
+    { label:'Pending', val:pending, cls:'amber', icon:'⏳' },
+    { label:'In Progress', val:inProgress, cls:'purple', icon:'🔄' },
+    { label:'Completed', val:completed, cls:'green', icon:'✅' },
+  ].map(s => `<div class="stat-card ${s.cls}"><div class="stat-icon">${s.icon}</div><div class="stat-value">${s.val}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  const emps = DB.getEmployees();
+  document.getElementById('task-table').innerHTML = filtered.map(t => {
+    const emp = emps.find(e => e.id === t.assignedTo);
+    return `<tr>
+      <td style="max-width:220px"><div style="font-weight:600;font-size:0.875rem">${t.title}</div></td>
+      <td>${emp ? `<div style="display:flex;gap:6px;align-items:center">${UI.avatar(emp.name, emp.color, 'sm')}<span style="font-size:0.85rem">${emp.name}</span></div>` : t.assignedTo}</td>
+      <td><span class="badge badge-purple">${t.project||'—'}</span></td>
+      <td>${UI.priorityBadge(t.priority)}</td>
+      <td style="font-size:0.82rem;color:var(--text-secondary)">${UI.fmtDate(t.due)}</td>
+      <td>${UI.statusBadge(t.status)}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          ${t.status!=='completed' ? `<button class="btn btn-success btn-sm" onclick="completeTask('${t.id}')">✓ Done</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px">No tasks found</td></tr>';
+}
+
+function openAddTask() {
+  document.getElementById('task-form').reset();
+  // Populate employee dropdown
+  const sel = document.getElementById('tf-emp');
+  const emps = DB.getEmployees();
+  sel.innerHTML = '<option value="">Select employee...</option>' + emps.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('tf-due').value = DB.today();
+  UI.openModal('task-modal');
+}
+
+function saveTask(e) {
+  e.preventDefault();
+  const tasks = DB.getTasks();
+  const task = {
+    id: DB.generateId('T'),
+    title: document.getElementById('tf-title').value,
+    assignedTo: document.getElementById('tf-emp').value,
+    project: document.getElementById('tf-project').value,
+    priority: document.getElementById('tf-priority').value,
+    due: document.getElementById('tf-due').value,
+    status: 'pending',
+    assignedBy: 'admin',
+    created: DB.today(),
+  };
+  tasks.push(task);
+  DB.saveTasks(tasks);
+  UI.closeModal('task-modal');
+  UI.toast('Task assigned!', 'success');
+  renderTaskSection();
+}
+
+function completeTask(id) {
+  const tasks = DB.getTasks();
+  const t = tasks.find(x => x.id === id);
+  if (t) { t.status = 'completed'; DB.saveTasks(tasks); renderTaskSection(); UI.toast('Task marked complete!', 'success'); }
+}
+function deleteTask(id) {
+  UI.confirm('Delete this task?', () => {
+    const tasks = DB.getTasks().filter(t => t.id !== id);
+    DB.saveTasks(tasks);
+    renderTaskSection();
+    UI.toast('Task deleted.', 'info');
+  });
+}
+
+// ─── Announcements ──────────────────────────────────────────
+function renderAnnouncements() {
+  const anns = DB.getAnnouncements();
+  const priMap = { high:'red', medium:'amber', low:'green' };
+  document.getElementById('ann-list').innerHTML = anns.map(a => `
+    <div class="card mb-16" style="position:relative;border-left:4px solid var(--${priMap[a.priority]||'blue'})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">${a.title}</h3>
+          <span style="font-size:0.75rem;color:var(--text-secondary)">${UI.fmtDate(a.posted)} · ${a.postedBy}</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${UI.priorityBadge(a.priority)}
+          <button class="btn btn-danger btn-sm" onclick="deleteAnn('${a.id}')">🗑️</button>
+        </div>
+      </div>
+      <p style="color:var(--text-secondary);font-size:0.875rem;line-height:1.7">${a.body}</p>
+    </div>
+  `).join('') || '<p style="color:var(--text-muted);text-align:center;padding:40px">No announcements yet.</p>';
+}
+
+function openAddAnn() { document.getElementById('ann-form').reset(); UI.openModal('ann-modal'); }
+function saveAnnouncement(e) {
+  e.preventDefault();
+  const anns = DB.getAnnouncements();
+  anns.unshift({ id: DB.generateId('A'), title: document.getElementById('annf-title').value, body: document.getElementById('annf-body').value, priority: document.getElementById('annf-priority').value, posted: DB.today(), postedBy: 'Admin' });
+  DB.saveAnnouncements(anns);
+  UI.closeModal('ann-modal');
+  UI.toast('Announcement posted!', 'success');
+  renderAnnouncements();
+}
+function deleteAnn(id) {
+  UI.confirm('Delete this announcement?', () => {
+    DB.saveAnnouncements(DB.getAnnouncements().filter(a => a.id !== id));
+    renderAnnouncements();
+    UI.toast('Announcement deleted.', 'info');
+  });
+}
+
+// ─── Reports ────────────────────────────────────────────────
+function renderReports() {
+  const reports = [
+    { id:'att', title:'Attendance Report', desc:'Monthly attendance summary for all employees', icon:'📅', color:'rgba(79,142,247,0.15)', iconColor:'var(--blue-light)' },
+    { id:'payroll', title:'Payroll Report', desc:'Salary and compensation summary', icon:'💰', color:'rgba(34,211,165,0.15)', iconColor:'var(--green)' },
+    { id:'leave', title:'Leave Report', desc:'Leave balance and utilization report', icon:'🌴', color:'rgba(245,158,11,0.15)', iconColor:'var(--amber)' },
+    { id:'emp', title:'Employee Directory', desc:'Full employee listing with details', icon:'👥', color:'rgba(124,92,252,0.15)', iconColor:'var(--purple-light)' },
+    { id:'task', title:'Task Summary', desc:'Task completion and status report', icon:'✅', color:'rgba(236,72,153,0.15)', iconColor:'var(--pink)' },
+    { id:'dept', title:'Department Report', desc:'Headcount and salary by department', icon:'🏢', color:'rgba(14,165,233,0.15)', iconColor:'#38bdf8' },
+  ];
+  document.getElementById('report-cards').innerHTML = reports.map(r => `
+    <div class="report-card" onclick="generateReport('${r.id}','${r.title}')">
+      <div class="report-icon" style="background:${r.color};color:${r.iconColor}">${r.icon}</div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px">${r.title}</div>
+        <div style="font-size:0.78rem;color:var(--text-secondary)">${r.desc}</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text-muted);font-size:1rem">›</span>
+    </div>
+  `).join('');
+}
+
+function generateReport(id, title) {
+  const emps = DB.getEmployees();
+  const att = DB.getAttendance();
+  const sal = DB.getSalary();
+  const leaves = DB.getLeaves();
+  const tasks = DB.getTasks();
+  const today = DB.today();
+  let html = '';
+
+  if (id === 'emp') {
+    html = `<table><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Salary</th><th>Status</th><th>Joined</th></tr></thead><tbody>` +
+      emps.map(e => `<tr><td>${e.id}</td><td>${e.name}</td><td>${e.department}</td><td>${e.designation}</td><td>${DB.fmt(e.salary)}</td><td>${UI.statusBadge(e.status)}</td><td>${UI.fmtDate(e.joined)}</td></tr>`).join('') + `</tbody></table>`;
+  } else if (id === 'att') {
+    html = `<table><thead><tr><th>Employee</th><th>Department</th><th>Today Status</th><th>Present Days (Est.)</th></tr></thead><tbody>` +
+      emps.map(e => {
+        const todayAtt = att[e.id]?.[today];
+        const pDays = Object.values(att[e.id]||{}).filter(a=>a.status==='present').length;
+        return `<tr><td>${e.name}</td><td>${e.department}</td><td>${todayAtt ? UI.statusBadge(todayAtt.status) : '—'}</td><td>${pDays}</td></tr>`;
+      }).join('') + `</tbody></table>`;
+  } else if (id === 'payroll') {
+    html = `<table><thead><tr><th>Employee</th><th>Gross</th><th>PF</th><th>Tax</th><th>Net</th><th>Status</th></tr></thead><tbody>` +
+      emps.map(e => { const r = sal[e.id]?.[0]; return r ? `<tr><td>${e.name}</td><td>${DB.fmt(r.gross)}</td><td>${DB.fmt(r.pf)}</td><td>${DB.fmt(r.tax)}</td><td>${DB.fmt(r.net)}</td><td>${UI.statusBadge(r.status)}</td></tr>` : ''; }).join('') + `</tbody></table>`;
+  } else if (id === 'leave') {
+    html = `<table><thead><tr><th>Employee</th><th>Type</th><th>Days</th><th>Status</th><th>Applied</th></tr></thead><tbody>` +
+      leaves.map(l => `<tr><td>${l.empName}</td><td>${l.type}</td><td>${l.days}</td><td>${UI.statusBadge(l.status)}</td><td>${UI.fmtDate(l.applied)}</td></tr>`).join('') + `</tbody></table>`;
+  } else if (id === 'task') {
+    html = `<table><thead><tr><th>Task</th><th>Assigned To</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead><tbody>` +
+      tasks.map(t => { const emp = emps.find(e=>e.id===t.assignedTo); return `<tr><td>${t.title}</td><td>${emp?.name||t.assignedTo}</td><td>${UI.priorityBadge(t.priority)}</td><td>${UI.fmtDate(t.due)}</td><td>${UI.statusBadge(t.status)}</td></tr>`; }).join('') + `</tbody></table>`;
+  } else if (id === 'dept') {
+    const depts = {};
+    emps.forEach(e => { if (!depts[e.department]) depts[e.department] = { count:0, salary:0 }; depts[e.department].count++; depts[e.department].salary+=e.salary; });
+    html = `<table><thead><tr><th>Department</th><th>Headcount</th><th>Total Salary</th><th>Avg Salary</th></tr></thead><tbody>` +
+      Object.entries(depts).map(([d,v]) => `<tr><td>${d}</td><td>${v.count}</td><td>${DB.fmt(v.salary)}</td><td>${DB.fmt(Math.round(v.salary/v.count))}</td></tr>`).join('') + `</tbody></table>`;
+  }
+
+  document.getElementById('report-title').textContent = title;
+  document.getElementById('report-content').innerHTML = '<div class="table-wrap">' + html + '</div>';
+  document.getElementById('report-preview').style.display = 'block';
+  document.getElementById('report-preview').scrollIntoView({ behavior:'smooth' });
+}
+
+// ─── Profile ────────────────────────────────────────────────
+function changePassword() {
+  const curr = document.getElementById('curr-pass').value;
+  const newP = document.getElementById('new-pass').value;
+  const conf = document.getElementById('conf-pass').value;
+  const admin = DB.getAdmin();
+  if (curr !== admin.password) { UI.toast('Current password is incorrect', 'error'); return; }
+  if (newP !== conf) { UI.toast('Passwords do not match', 'error'); return; }
+  if (newP.length < 6) { UI.toast('Password must be at least 6 characters', 'warning'); return; }
+  admin.password = newP;
+  DB.set('admin', admin);
+  UI.toast('Password updated!', 'success');
+  document.getElementById('curr-pass').value = document.getElementById('new-pass').value = document.getElementById('conf-pass').value = '';
+}
+
+// ─── Section Change Listener ────────────────────────────────
+window.addEventListener('sectionChange', (e) => {
+  const s = e.detail;
+  if (s === 'dashboard') renderDashboard();
+  else if (s === 'employees') renderEmployeeTable();
+  else if (s === 'attendance') renderAttendanceSection();
+  else if (s === 'salary') renderSalarySection();
+  else if (s === 'leaves') renderLeaveSection();
+  else if (s === 'tasks') renderTaskSection();
+  else if (s === 'announcements') renderAnnouncements();
+  else if (s === 'reports') renderReports();
+});
+
+// ─── Populate dropdowns ─────────────────────────────────────
+function populateAllDropdowns() {
+  populateEmpDropdown('att-emp-filter');
+  populateEmpDropdown('sal-emp-filter');
+  populateEmpDropdown('task-emp-filter');
+}
+
+// ─── Global Search ──────────────────────────────────────────
+document.getElementById('global-search').addEventListener('input', function() {
+  const q = this.value.trim();
+  if (!q) return;
+  const emps = DB.getEmployees().filter(e => e.name.toLowerCase().includes(q.toLowerCase()) || e.email.toLowerCase().includes(q.toLowerCase()));
+  if (emps.length) {
+    UI.showSection('employees');
+    document.getElementById('emp-search').value = q;
+    renderEmployeeTable();
+  }
+});
+
+// ─── Initial Render ─────────────────────────────────────────
+populateAllDropdowns();
+renderDashboard();
+renderNotifications();
+// Set today's date on attendance month input
+document.getElementById('att-month').value = new Date().toISOString().slice(0,7);
+</script>
+</body>
+</html>
